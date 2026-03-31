@@ -1,0 +1,5 @@
+-r base.txt
+
+# APM / perf (optionnel selon ton choix)
+# newrelic>=9.0,<10.0
+# prometheus-client>=0.20,<0.21

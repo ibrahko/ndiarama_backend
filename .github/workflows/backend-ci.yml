@@ -1,0 +1,75 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Lint, security, tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ndiarama_ci
+          POSTGRES_USER: ndiarama
+          POSTGRES_PASSWORD: ndiarama
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U ndiarama -d ndiarama_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DEBUG: "False"
+      SECRET_KEY: ci_dummy_secret_key
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgres://ndiarama:ndiarama@localhost:5433/ndiarama_ci
+      LOG_LEVEL: INFO
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/dev.txt
+          pip install bandit safety
+
+      - name: Run migrations
+        run: |
+          python manage.py migrate --noinput
+
+      - name: Run tests
+        run: |
+          pytest || python manage.py test
+
+      - name: Lint (flake8)
+        run: |
+          flake8 .
+
+      - name: Security scan (Bandit)
+        run: |
+          bandit -r . -x tests
+
+      - name: Dependency vulnerabilities (Safety)
+        run: |
+          safety check --full-report || true
