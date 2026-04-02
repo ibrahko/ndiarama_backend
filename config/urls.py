@@ -1,13 +1,15 @@
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from django.conf import settings
 from django.conf.urls.static import static
 
 def api_root(request):
-    return JsonResponse({"status": "ok", "service": "NDIARAMA API"})
+    return HttpResponse('{"status": "ok", "service": "NDIARAMA API"}', 
+                        content_type="application/json", 
+                        status=200)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
