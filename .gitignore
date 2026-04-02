@@ -1,0 +1,8 @@
+ndiara_backend.env
+*.env
+__pycache__/
+*.pyc
+staticfiles/
+media/
+db.sqlite3
+.DS_Store
