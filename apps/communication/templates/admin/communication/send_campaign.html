@@ -1,0 +1,217 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Envoyer une Newsletter - Admin NDIARAMA{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Accueil</a>
+  &rsaquo;
+  <a href="{% url 'admin:app_list' app_label='communication' %}">Communication</a>
+  &rsaquo;
+  <a href="{% url 'admin:communication_newslettersubscriber_changelist' %}">Newsletter subscribers</a>
+  &rsaquo;
+  Envoyer une Newsletter
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:780px;">
+
+  <h1 style="font-size:22px;font-weight:600;color:#2b211d;margin-bottom:6px;">
+    Envoyer une Newsletter
+  </h1>
+  <p style="color:#888;font-size:13px;margin-bottom:28px;">
+    L'email sera envoye via Mailchimp a tous les abonnes de la liste NDIARAMA.
+    Testez toujours avant d'envoyer a toute la liste.
+  </p>
+
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'success' %}
+        <div style="padding:14px 18px;border-radius:8px;margin-bottom:20px;
+                    font-size:14px;background:#d4edda;border:1px solid #c3e6cb;color:#155724;">
+          {{ message }}
+        </div>
+      {% else %}
+        <div style="padding:14px 18px;border-radius:8px;margin-bottom:20px;
+                    font-size:14px;background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;">
+          {{ message }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" id="campaign-form">
+    {% csrf_token %}
+
+    <!-- Objet -->
+    <div style="margin-bottom:20px;">
+      abel style="display:block;font-weight:600;font-size:13px;color:#333;margin-bottom:6px;">
+        Objet de l'email <span style="color:red;">*</span>
+      </label>
+      <input
+        type="text"
+        name="subject"
+        value="{{ form_data.subject|default:'' }}"
+        placeholder="Nouveau podcast NDIARAMA - Episode 12"
+        required
+        style="width:100%;padding:10px 14px;border:1px solid #ddd;
+               border-radius:8px;font-size:14px;box-sizing:border-box;"
+      />
+    </div>
+
+    <!-- Apercu -->
+    <div style="margin-bottom:20px;">
+      abel style="display:block;font-weight:600;font-size:13px;color:#333;margin-bottom:6px;">
+        Texte d'apercu
+        <span style="font-weight:400;color:#999;font-size:12px;">
+          — affiche dans la boite mail avant ouverture
+        </span>
+      </label>
+      <input
+        type="text"
+        name="preview_text"
+        value="{{ form_data.preview_text|default:'' }}"
+        placeholder="Decouvrez notre dernier episode..."
+        style="width:100%;padding:10px 14px;border:1px solid #ddd;
+               border-radius:8px;font-size:14px;box-sizing:border-box;"
+      />
+    </div>
+
+    <!-- Contenu -->
+    <div style="margin-bottom:20px;">
+      abel style="display:block;font-weight:600;font-size:13px;color:#333;margin-bottom:6px;">
+        Contenu de l'email <span style="color:red;">*</span>
+        <span style="font-weight:400;color:#999;font-size:12px;">
+          — HTML accepte, le template NDIARAMA sera applique automatiquement
+        </span>
+      </label>
+
+      <!-- Onglets -->
+      <div style="display:flex;border-bottom:2px solid #ddd;">
+        <button type="button" id="tab-editor" onclick="showTab('editor')"
+          style="padding:8px 20px;font-size:13px;font-weight:600;border:none;
+                 background:#c69470;color:white;cursor:pointer;border-radius:6px 6px 0 0;">
+          Editeur
+        </button>
+        <button type="button" id="tab-preview" onclick="showTab('preview')"
+          style="padding:8px 20px;font-size:13px;font-weight:600;border:none;
+                 background:#f0f0f0;color:#555;cursor:pointer;border-radius:6px 6px 0 0;">
+          Apercu
+        </button>
+      </div>
+
+      <!-- Zone editeur -->
+      <div id="panel-editor">
+        <textarea
+          id="html-content"
+          name="html_content"
+          rows="18"
+          required
+          style="width:100%;padding:14px;border:1px solid #ddd;border-top:none;
+                 border-radius:0 0 8px 8px;font-size:13px;font-family:monospace;
+                 line-height:1.6;box-sizing:border-box;resize:vertical;min-height:320px;"
+        >{{ form_data.html_content|default:'' }}</textarea>
+      </div>
+
+      <!-- Zone apercu -->
+      <div id="panel-preview"
+        style="display:none;border:1px solid #ddd;border-top:none;
+               border-radius:0 0 8px 8px;min-height:320px;background:#f8f4ef;padding:20px;">
+        <iframe id="preview-frame"
+          style="width:100%;min-height:480px;border:none;border-radius:8px;">
+        </iframe>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:32px 0;" />
+
+    <!-- Section TEST -->
+    <div style="background:#fff8f0;border:1px solid #f0d9c0;border-radius:12px;
+                padding:22px;margin-bottom:20px;">
+      <h3 style="margin:0 0 6px;font-size:15px;color:#b27a54;font-weight:600;">
+        Envoyer un email de test
+      </h3>
+      <p style="margin:0 0 14px;font-size:13px;color:#999;">
+        Verifiez le rendu dans votre boite mail avant d'envoyer a toute la liste.
+      </p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input
+          type="email"
+          name="test_email"
+          value="{{ form_data.test_email|default:'' }}"
+          placeholder="votre@email.com"
+          style="flex:1;min-width:220px;padding:10px 14px;border:1px solid #ddd;
+                 border-radius:8px;font-size:14px;box-sizing:border-box;"
+        />
+        <button type="submit" name="action" value="test"
+          style="padding:10px 24px;background:#c69470;color:white;border:none;
+                 border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+          Envoyer le test
+        </button>
+      </div>
+    </div>
+
+    <!-- Envoi final -->
+    <div style="background:#2b211d;border-radius:12px;padding:22px 24px;
+                display:flex;align-items:center;justify-content:space-between;
+                gap:16px;flex-wrap:wrap;">
+      <div>
+        <p style="margin:0 0 4px;font-size:15px;color:white;font-weight:600;">
+          Envoyer a tous les abonnes
+        </p>
+        <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.55);">
+          Action irreversible — testez d'abord avec l'email de test ci-dessus.
+        </p>
+      </div>
+      <button
+        type="submit"
+        name="action"
+        value="send"
+        onclick="return confirm('Confirmer l\'envoi a TOUS les abonnes Mailchimp NDIARAMA ?')"
+        style="padding:12px 32px;background:#c69470;color:white;border:none;
+               border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">
+        Envoyer maintenant
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  function showTab(tab) {
+    const editor = document.getElementById('panel-editor');
+    const preview = document.getElementById('panel-preview');
+    const tabEditor = document.getElementById('tab-editor');
+    const tabPreview = document.getElementById('tab-preview');
+
+    if (tab === 'editor') {
+      editor.style.display = 'block';
+      preview.style.display = 'none';
+      tabEditor.style.background = '#c69470';
+      tabEditor.style.color = 'white';
+      tabPreview.style.background = '#f0f0f0';
+      tabPreview.style.color = '#555';
+    } else {
+      editor.style.display = 'none';
+      preview.style.display = 'block';
+      tabEditor.style.background = '#f0f0f0';
+      tabEditor.style.color = '#555';
+      tabPreview.style.background = '#c69470';
+      tabPreview.style.color = 'white';
+
+      const content = document.getElementById('html-content').value;
+      const frame = document.getElementById('preview-frame');
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open();
+      doc.write(
+        '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/>' +
+        '<style>body{margin:0;padding:20px;background:#f8f4ef;' +
+        'font-family:Georgia,serif;color:#444;}</style></head>' +
+        '<body>' + content + '</body></html>'
+      );
+      doc.close();
+    }
+  }
+</script>
+{% endblock %}
