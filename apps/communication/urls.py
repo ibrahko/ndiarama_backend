@@ -6,6 +6,7 @@ from .views import (
     ContactMessageCreateView,
     NewsletterSubscriberAdminViewSet,
     ContactMessageAdminViewSet,
+    SendNewsletterCampaignView,
 )
 
 router = DefaultRouter()
@@ -23,6 +24,7 @@ router.register(
 urlpatterns = [
     path("newsletter/", NewsletterSubscribeView.as_view(), name="newsletter-subscribe"),
     path("contact/", ContactMessageCreateView.as_view(), name="contact-create"),
+    path("send-campaign/", SendNewsletterCampaignView.as_view(), name="send-campaign"),
 ]
 
 urlpatterns += router.urls

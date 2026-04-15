@@ -10,10 +10,14 @@ class NewsletterSubscriberSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "first_name",
+            "whatsapp",
             "source",
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def validate_email(self, value):
+        return value.lower().strip()
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):

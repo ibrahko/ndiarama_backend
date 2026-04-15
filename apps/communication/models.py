@@ -4,11 +4,13 @@ from django.db import models
 class NewsletterSubscriber(models.Model):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
+    whatsapp = models.CharField(max_length=20, blank=True, default="")
     source = models.CharField(
         max_length=100,
         blank=True,
         help_text="Origine de l’inscription (footer, community, autre).",
     )
+    mailchimp_synced = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
