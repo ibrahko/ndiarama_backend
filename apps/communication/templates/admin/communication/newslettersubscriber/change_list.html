@@ -1,0 +1,14 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  <li>
+    <a
+      href="{{ send_campaign_url }}"
+      class="addlink"
+      style="background: #c69470;"
+    >
+      📧 Envoyer une Newsletter
+    </a>
+  </li>
+  {{ block.super }}
+{% endblock %}

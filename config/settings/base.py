@@ -274,7 +274,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 
-MAILCHIMP_API_KEY = env("MAILCHIMP_API_KEY")
-MAILCHIMP_LIST_ID = env("MAILCHIMP_LIST_ID")
-MAILCHIMP_SERVER_PREFIX = env("MAILCHIMP_SERVER_PREFIX")
-MAILCHIMP_REPLY_TO = env("MAILCHIMP_REPLY_TO")
+# ✅ Version finale — une seule fois chacune
+MAILCHIMP_API_KEY = env("MAILCHIMP_API_KEY", default="")
+MAILCHIMP_LIST_ID = env("MAILCHIMP_LIST_ID", default="")
+MAILCHIMP_SERVER_PREFIX = env("MAILCHIMP_SERVER_PREFIX", default="us16")
+MAILCHIMP_REPLY_TO = env("MAILCHIMP_REPLY_TO", default="contact@ndiarama.com")
