@@ -7,7 +7,8 @@ from .models import NewsletterSubscriber, ContactMessage
 from .serializers import NewsletterSubscriberSerializer, ContactMessageSerializer
 from .services import subscribe_to_mailchimp
 from .services import create_and_send_campaign
-
+from rest_framework.views import APIView
+from rest_framework.response import Response 
 
 class NewsletterSubscribeView(generics.CreateAPIView):
     queryset = NewsletterSubscriber.objects.all()
