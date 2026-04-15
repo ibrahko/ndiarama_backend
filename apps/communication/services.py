@@ -1,5 +1,3 @@
-# communication/services.py
-
 import requests
 import hashlib
 import logging
@@ -9,99 +7,64 @@ logger = logging.getLogger(__name__)
 
 
 def _hash_email(email: str) -> str:
-    """
-    Mailchimp identifie chaque contact par le MD5 de son email en minuscule.
-    Obligatoire pour l'endpoint PUT /members/{subscriber_hash}
-    """
     return hashlib.md5(email.lower().strip().encode()).hexdigest()
 
 
 def subscribe_to_mailchimp(email: str, whatsapp: str = None) -> dict:
-    """
-    Ajoute ou met à jour un contact dans Mailchimp.
-    
-    On utilise PUT au lieu de POST pour deux raisons :
-    - PUT = upsert (crée si inexistant, met à jour si existant)
-    - POST échoue si l'email existe déjà → erreur 400
-    """
     api_key = settings.MAILCHIMP_API_KEY
     list_id = settings.MAILCHIMP_LIST_ID
-    server = settings.MAILCHIMP_SERVER_PREFIX  # ex: "us21"
+    server = settings.MAILCHIMP_SERVER_PREFIX
 
-    # URL de l'endpoint Mailchimp
     url = (
         f"https://{server}.api.mailchimp.com/3.0"
         f"/lists/{list_id}/members/{_hash_email(email)}"
     )
-
-    # Payload envoyé à Mailchimp
     payload = {
         "email_address": email,
-        "status_if_new": "subscribed",   # statut si nouveau contact
-        "status": "subscribed",           # statut si contact existant
+        "status_if_new": "subscribed",
+        "status": "subscribed",
         "merge_fields": {}
     }
-
-    # Ajouter WhatsApp si fourni
-    # ⚠️ "WHATSAPP" doit correspondre au nom du champ custom dans Mailchimp
     if whatsapp:
         payload["merge_fields"]["WHATSAPP"] = whatsapp
 
     try:
         response = requests.put(
-            url,
-            json=payload,
-            auth=("anystring", api_key),  # user peut être n'importe quoi
+            url, json=payload,
+            auth=("anystring", api_key),
             timeout=10
         )
-
-        response_data = response.json()
-
-        # Succès : 200 (mis à jour) ou 201 (créé)
         if response.status_code in [200, 201]:
-            logger.info(f"[Mailchimp] ✅ Abonné ajouté : {email}")
-            return {
-                "success": True,
-                "mailchimp_id": response_data.get("id"),
-                "status": response_data.get("status")
-            }
+            logger.info(f"[Mailchimp] ✅ Abonné : {email}")
+            return {"success": True}
         else:
-            # Erreur côté Mailchimp (ex: email invalide, clé incorrecte)
-            error_detail = response_data.get("detail", "Erreur inconnue")
-            logger.error(f"[Mailchimp] ❌ Erreur {response.status_code} : {error_detail}")
-            return {
-                "success": False,
-                "error": error_detail,
-                "status_code": response.status_code
-            }
-
+            error = response.json().get("detail", "Erreur inconnue")
+            logger.error(f"[Mailchimp] ❌ {response.status_code} : {error}")
+            return {"success": False, "error": error}
     except requests.exceptions.Timeout:
-        logger.error("[Mailchimp] ❌ Timeout — Mailchimp ne répond pas")
         return {"success": False, "error": "Timeout Mailchimp"}
-
     except requests.exceptions.ConnectionError:
-        logger.error("[Mailchimp] ❌ Connexion impossible")
         return {"success": False, "error": "Connexion impossible"}
-
     except Exception as e:
-        logger.error(f"[Mailchimp] ❌ Erreur inattendue : {str(e)}")
         return {"success": False, "error": str(e)}
 
 
+def create_and_send_campaign(
+    subject: str,
+    html_content: str,
+    preview_text: str = "",
+    test_email: str = None
+) -> dict:
 
-def create_and_send_campaign(subject: str, html_content: str, preview_text: str = "") -> dict:
-    """
-    Crée une campagne Mailchimp et l'envoie immédiatement à toute la liste.
-    À appeler depuis l'admin Django ou une vue protégée.
-    """
     api_key = settings.MAILCHIMP_API_KEY
     list_id = settings.MAILCHIMP_LIST_ID
     server = settings.MAILCHIMP_SERVER_PREFIX
+    reply_to = getattr(settings, "MAILCHIMP_REPLY_TO", "contact@ndiarama.com")
 
     base_url = f"https://{server}.api.mailchimp.com/3.0"
     auth = ("anystring", api_key)
 
-    # ── ÉTAPE 1 : Créer la campagne ──────────────────────
+    # ── ÉTAPE 1 : Créer la campagne ──────────────────────────────
     campaign_res = requests.post(
         f"{base_url}/campaigns",
         json={
@@ -111,45 +74,145 @@ def create_and_send_campaign(subject: str, html_content: str, preview_text: str 
                 "subject_line": subject,
                 "preview_text": preview_text,
                 "from_name": "NDIARAMA",
-                "reply_to": settings.MAILCHIMP_REPLY_TO,  # ton email
+                "reply_to": reply_to,
             },
         },
         auth=auth,
-        timeout=10,
+        timeout=15,
     )
 
     if campaign_res.status_code != 200:
-        logger.error(f"[Mailchimp] ❌ Création campagne échouée : {campaign_res.json()}")
-        return {"success": False, "error": campaign_res.json()}
+        error = campaign_res.json()
+        logger.error(f"[Mailchimp] ❌ Création : {error}")
+        return {
+            "success": False,
+            "step": "creation",
+            "error": error.get("detail", str(error))
+        }
 
     campaign_id = campaign_res.json()["id"]
     logger.info(f"[Mailchimp] ✅ Campagne créée : {campaign_id}")
 
-    # ── ÉTAPE 2 : Ajouter le contenu HTML ────────────────
+    # ── ÉTAPE 2 : Ajouter le contenu ─────────────────────────────
     content_res = requests.put(
         f"{base_url}/campaigns/{campaign_id}/content",
-        json={"html": html_content},
+        json={"html": _build_html_email(html_content)},
         auth=auth,
-        timeout=10,
+        timeout=15,
     )
 
     if content_res.status_code != 200:
-        logger.error(f"[Mailchimp] ❌ Contenu échoué : {content_res.json()}")
-        return {"success": False, "error": content_res.json()}
+        error = content_res.json()
+        logger.error(f"[Mailchimp] ❌ Contenu : {error}")
+        return {
+            "success": False,
+            "step": "content",
+            "error": error.get("detail", str(error))
+        }
 
-    logger.info(f"[Mailchimp] ✅ Contenu ajouté à {campaign_id}")
+    logger.info(f"[Mailchimp] ✅ Contenu ajouté")
 
-    # ── ÉTAPE 3 : Envoyer la campagne ────────────────────
+    # ── MODE TEST ─────────────────────────────────────────────────
+    if test_email:
+        test_res = requests.post(
+            f"{base_url}/campaigns/{campaign_id}/actions/test",
+            json={
+                "test_emails": [test_email],
+                "send_type": "html"
+            },
+            auth=auth,
+            timeout=15,
+        )
+        if test_res.status_code == 204:
+            logger.info(f"[Mailchimp] ✅ Test envoyé à {test_email}")
+            return {
+                "success": True,
+                "mode": "test",
+                "campaign_id": campaign_id,
+                "message": f"Email de test envoyé à {test_email}"
+            }
+        else:
+            error = test_res.json()
+            return {
+                "success": False,
+                "step": "test_send",
+                "error": error.get("detail", str(error))
+            }
+
+    # ── ENVOI RÉEL ────────────────────────────────────────────────
     send_res = requests.post(
         f"{base_url}/campaigns/{campaign_id}/actions/send",
         auth=auth,
-        timeout=10,
+        timeout=15,
     )
 
-    # 204 = succès sans contenu (normal pour Mailchimp)
     if send_res.status_code == 204:
         logger.info(f"[Mailchimp] ✅ Campagne envoyée : {campaign_id}")
-        return {"success": True, "campaign_id": campaign_id}
+        return {
+            "success": True,
+            "mode": "send",
+            "campaign_id": campaign_id,
+            "message": "Campagne envoyee a tous les abonnes."
+        }
     else:
-        logger.error(f"[Mailchimp] ❌ Envoi échoué : {send_res.json()}")
-        return {"success": False, "error": send_res.json()}
+        error = send_res.json()
+        logger.error(f"[Mailchimp] ❌ Envoi : {error}")
+        return {
+            "success": False,
+            "step": "send",
+            "error": error.get("detail", str(error))
+        }
+
+
+def _build_html_email(content: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Newsletter NDIARAMA</title>
+</head>
+<body style="margin:0;padding:0;background:#f8f4ef;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"
+         style="background:#f8f4ef;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+               style="background:#ffffff;border-radius:16px;overflow:hidden;
+                      box-shadow:0 4px 24px rgba(120,78,52,0.10);">
+          <!-- HEADER -->
+          <tr>
+            <td style="background:#c69470;padding:28px 40px;text-align:center;">
+              <p style="margin:0;font-size:11px;letter-spacing:0.25em;
+                         color:rgba(255,255,255,0.8);text-transform:uppercase;">
+                Studio Media et Consulting
+              </p>
+              <h1 style="margin:8px 0 0;font-size:26px;font-weight:600;color:#ffffff;">
+                NDIARAMA
+              </h1>
+            </td>
+          </tr>
+          <!-- CONTENU -->
+          <tr>
+            <td style="padding:40px;color:#444444;font-size:15px;line-height:1.8;">
+              {content}
+            </td>
+          </tr>
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#2b211d;padding:24px 40px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:11px;color:rgba(255,255,255,0.5);
+                         text-transform:uppercase;letter-spacing:0.15em;">
+                NDIARAMA Media et Consulting — Bamako, Mali
+              </p>
+              <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.4);">
+                *|UNSUB|* &middot; *|UPDATE_PROFILE|*
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
