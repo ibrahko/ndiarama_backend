@@ -19,9 +19,8 @@ services:
         value: "ndiarama-backend.onrender.com"
       - key: CORS_ALLOW_ALL_ORIGINS
         value: "False"
-      # Mettre à jour avec l'URL réelle du frontend après déploiement
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://ndiarama-front.onrender.com"
+        value: "https://ndiarama-front.vercel.app"
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://ndiarama-backend.onrender.com"
       - key: SECURE_SSL_REDIRECT
@@ -36,8 +35,7 @@ services:
         value: "contact@ndiarama.com"
       - key: LOG_LEVEL
         value: "INFO"
-      # Superuser créé automatiquement au premier déploiement
-      # Définir ces variables manuellement dans le dashboard Render
+      # Decommenter et remplir dans le dashboard Render pour creer le superuser
       # - key: DJANGO_SUPERUSER_USERNAME
       # - key: DJANGO_SUPERUSER_EMAIL
       # - key: DJANGO_SUPERUSER_PASSWORD
