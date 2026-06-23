@@ -24,7 +24,10 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# Sécurité
+# Static files — /tmp est toujours accessible en ecriture sur Railway
+STATIC_ROOT = "/tmp/staticfiles"
+
+# Securite
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=3600)
