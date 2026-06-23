@@ -1,0 +1,117 @@
+/*
+ * NDIARAMA Admin — Personnalisation visuelle
+ * Complète django-unfold avec le style de marque
+ */
+
+/* ── Sidebar toujours visible sur desktop ─────────────────────── */
+@media (min-width: 1024px) {
+  /* Force le sidebar à rester ouvert */
+  [x-data]:not([class*="sidebar"]) aside,
+  nav[class*="sidebar"],
+  .sidebar,
+  aside {
+    transform: translateX(0) !important;
+  }
+}
+
+/* ── Logo / titre sidebar ─────────────────────────────────────── */
+.sidebar-header,
+[class*="site-header"] {
+  border-bottom: 2px solid oklch(65.0% 0.110 52);
+}
+
+/* ── Liens actifs dans la sidebar ────────────────────────────── */
+nav a[aria-current="page"],
+nav a.active {
+  background: oklch(65.0% 0.110 52) !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+
+/* ── Badges de section dans la sidebar ──────────────────────── */
+nav [class*="section-title"],
+nav [class*="group-title"] {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  opacity: 0.5;
+  padding: 1rem 1rem 0.25rem;
+}
+
+/* ── Formulaires — champs plus grands et aérés ───────────────── */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="password"],
+textarea,
+select {
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+}
+
+textarea {
+  min-height: 120px;
+}
+
+/* ── Fieldset descriptions (textes d'aide) ───────────────────── */
+.fieldset-description,
+.help,
+p.help {
+  font-size: 0.82rem;
+  color: oklch(47.5% 0.110 48);
+  background: oklch(97.5% 0.010 52);
+  border-left: 3px solid oklch(65.0% 0.110 52);
+  border-radius: 0 6px 6px 0;
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0 1rem;
+  line-height: 1.5;
+}
+
+/* ── Bouton Save — couleur terracotta ────────────────────────── */
+input[type="submit"][value*="Enregistrer"],
+input[type="submit"][value*="Save"],
+button[type="submit"],
+.submit-row input[type="submit"] {
+  background: oklch(65.0% 0.110 52) !important;
+  border-color: oklch(56.0% 0.115 50) !important;
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover {
+  background: oklch(56.0% 0.115 50) !important;
+}
+
+/* ── Tableaux de liste — lignes alternées ────────────────────── */
+#result_list tbody tr:nth-child(even) {
+  background: oklch(97.5% 0.010 52);
+}
+
+/* ── En-tête des tables ──────────────────────────────────────── */
+#result_list thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Messages de succès / erreur ─────────────────────────────── */
+.messagelist li.success {
+  background: #e8f5e9;
+  border-left: 4px solid #2e7d32;
+}
+.messagelist li.error {
+  background: #fbe9e7;
+  border-left: 4px solid #e65100;
+}
+
+/* ── Page d'accueil admin — cartes d'app ─────────────────────── */
+.app-list .app {
+  border-radius: 10px;
+  border: 1px solid oklch(87.5% 0.050 52);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.app-list .app:hover {
+  box-shadow: 0 4px 16px rgba(204,138,95,0.15);
+}

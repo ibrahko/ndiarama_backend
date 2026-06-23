@@ -1,3 +1,7 @@
+"""
+Sérialiseurs DRF pour l'application services.
+Exposent les modèles via l'API REST au frontend React.
+"""
 from rest_framework import serializers
 
 from .models import Service

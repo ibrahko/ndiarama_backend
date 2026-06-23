@@ -12,7 +12,7 @@ CORS_ALLOWED_ORIGINS = []
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Logging plus verbeux en dev
-LOG_LEVEL = "DEBUG"
+# LOG_LEVEL = "DEBUG"
 for logger_name in ["django", "apps", "django.request"]:
     LOGGING["loggers"][logger_name]["level"] = LOG_LEVEL
 LOGGING["root"]["level"] = LOG_LEVEL

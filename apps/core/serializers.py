@@ -1,3 +1,7 @@
+"""
+Sérialiseurs DRF pour l'application core.
+Exposent les modèles via l'API REST au frontend React.
+"""
 from rest_framework import serializers
 
 from .models import SiteSettings, TeamMember, Testimonial

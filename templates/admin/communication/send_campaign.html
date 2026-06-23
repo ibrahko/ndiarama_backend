@@ -1,0 +1,88 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Envoyer une Newsletter — NDIARAMA Admin{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+  <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:1.5rem;">📨 Envoyer une Newsletter</h1>
+
+  {% if messages %}
+  <ul class="messagelist">
+    {% for message in messages %}
+    <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <div style="background:#fef9f5;border:1px solid #e3d4c8;border-radius:10px;padding:1.5rem;margin-bottom:1.5rem;">
+    <p style="margin:0;font-size:0.875rem;color:#6b5344;">
+      💡 <strong>Mode d'emploi :</strong> Rédigez l'objet et le contenu HTML de votre newsletter ci-dessous.
+      Utilisez le bouton <em>Envoyer un test</em> pour vérifier l'affichage dans votre boîte email avant d'envoyer à toute la liste.
+    </p>
+  </div>
+
+  <form method="post" id="campaign-form">
+    {% csrf_token %}
+
+    <div style="margin-bottom:1.25rem;">
+      <label for="subject" style="display:block;font-weight:600;margin-bottom:.4rem;">
+        Objet de l'email <span style="color:#e65100;">*</span>
+      </label>
+      <input type="text" name="subject" id="subject" required
+             value="{{ form_data.subject|default:'' }}"
+             placeholder="Ex: NDIARAMA — Récap mensuel Mai 2026"
+             style="width:100%;padding:.6rem .75rem;border:1px solid #d1c4b8;border-radius:6px;font-size:.9rem;">
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <label for="preview_text" style="display:block;font-weight:600;margin-bottom:.4rem;">
+        Texte de prévisualisation
+        <span style="font-weight:400;color:#888;font-size:.8rem;">(s'affiche dans la liste de mails)</span>
+      </label>
+      <input type="text" name="preview_text" id="preview_text"
+             value="{{ form_data.preview_text|default:'' }}"
+             placeholder="Court résumé affiché par les clients email…"
+             style="width:100%;padding:.6rem .75rem;border:1px solid #d1c4b8;border-radius:6px;font-size:.9rem;">
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <label for="html_content" style="display:block;font-weight:600;margin-bottom:.4rem;">
+        Contenu HTML <span style="color:#e65100;">*</span>
+      </label>
+      <textarea name="html_content" id="html_content" required rows="14"
+                placeholder="Collez votre HTML ou rédigez en HTML simple…"
+                style="width:100%;padding:.6rem .75rem;border:1px solid #d1c4b8;border-radius:6px;font-size:.85rem;font-family:monospace;">{{ form_data.html_content|default:'' }}</textarea>
+    </div>
+
+    <div style="margin-bottom:1.75rem;padding:1rem;background:#f3f4f6;border-radius:8px;">
+      <label for="test_email" style="display:block;font-weight:600;margin-bottom:.4rem;">
+        Email de test (facultatif)
+      </label>
+      <input type="email" name="test_email" id="test_email"
+             value="{{ form_data.test_email|default:'' }}"
+             placeholder="votre@email.com"
+             style="width:100%;max-width:320px;padding:.6rem .75rem;border:1px solid #d1c4b8;border-radius:6px;font-size:.9rem;">
+      <p style="margin:.5rem 0 0;font-size:.8rem;color:#666;">
+        Renseignez cet email puis cliquez <em>"Envoyer un test"</em> pour recevoir un aperçu.
+      </p>
+    </div>
+
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+      <button type="submit" name="action" value="test"
+              style="padding:.65rem 1.4rem;background:#555;color:#fff;border:none;border-radius:6px;font-size:.9rem;font-weight:600;cursor:pointer;">
+        📬 Envoyer un test
+      </button>
+      <button type="submit" name="action" value="send"
+              onclick="return confirm('Envoyer à TOUS les abonnés de la liste Mailchimp ?')"
+              style="padding:.65rem 1.4rem;background:#cc8a5f;color:#fff;border:none;border-radius:6px;font-size:.9rem;font-weight:600;cursor:pointer;">
+        🚀 Envoyer à toute la liste
+      </button>
+      <a href="{% url 'admin:communication_newslettersubscriber_changelist' %}"
+         style="padding:.65rem 1.4rem;background:#f3f4f6;color:#555;border:1px solid #d1c4b8;border-radius:6px;font-size:.9rem;text-decoration:none;">
+        ← Retour aux abonnés
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

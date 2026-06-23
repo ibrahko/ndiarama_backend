@@ -4,7 +4,7 @@ from django.db import models
 class Service(models.Model):
     CATEGORY_CONSULTING = "consulting"
     CATEGORY_PROGRAM = "program"
-    CATEGORY_TRAINING = "training"
+    CATEGORY_TRAINING = "formation"  # Aligné avec le frontend (ServiceCategory = "formation")
 
     CATEGORY_CHOICES = (
         (CATEGORY_CONSULTING, "Consulting"),

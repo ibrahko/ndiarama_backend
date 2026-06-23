@@ -9,6 +9,9 @@ Pillow>=10.0,<11.0
 django-environ>=0.11,<1.0
 gunicorn>=21.2,<22.0
 
+# Admin CMS — thème moderne non-technique
+django-unfold>=0.40.0
+
 # Observabilité / monitoring
 sentry-sdk[django]>=1.40,<2.0
 

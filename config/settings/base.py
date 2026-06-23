@@ -21,21 +21,24 @@ env = environ.Env(
     SENTRY_DSN=(str, ""),
 )
 
-# Fichier .env optionnel à la racine du projet
-env_file = BASE_DIR / "ndiara_backend.env"
+# Fichier .env optionnel a la racine du projet
+env_file = BASE_DIR / "ndiarama_backend.env"
 if env_file.exists():
     environ.Env.read_env(env_file)
 
 DEBUG = env.bool("DEBUG")
-
 SECRET_KEY = env("SECRET_KEY")
-
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 # --------------------------------------------------
 # Applications
 # --------------------------------------------------
 DJANGO_APPS = [
+    # unfold DOIT etre avant django.contrib.admin
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "unfold.contrib.inlines",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -82,7 +85,6 @@ MIDDLEWARE = [
 # URLs / WSGI / ASGI
 # --------------------------------------------------
 ROOT_URLCONF = "config.urls"
-
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
@@ -106,7 +108,7 @@ TEMPLATES = [
 ]
 
 # --------------------------------------------------
-# Base de données
+# Base de donnees
 # --------------------------------------------------
 DATABASES = {
     "default": env.db("DATABASE_URL")
@@ -116,18 +118,10 @@ DATABASES = {
 # Auth / Passwords / Internationalisation
 # --------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 LANGUAGE_CODE = "fr-fr"
@@ -140,9 +134,7 @@ USE_TZ = True
 # --------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
@@ -211,10 +203,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": (
-                "[{levelname}] {asctime} {name} "
-                "{process:d} {thread:d} {message}"
-            ),
+            "format": "[{levelname}] {asctime} {name} {process:d} {thread:d} {message}",
             "style": "{",
         },
         "simple": {
@@ -264,7 +253,7 @@ if SENTRY_DSN:
     )
 
 # --------------------------------------------------
-# Sécurité générique (override en prod.py si besoin)
+# Securite generique
 # --------------------------------------------------
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -273,9 +262,154 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
 
-
-# ✅ Version finale — une seule fois chacune
 MAILCHIMP_API_KEY = env("MAILCHIMP_API_KEY", default="")
 MAILCHIMP_LIST_ID = env("MAILCHIMP_LIST_ID", default="")
 MAILCHIMP_SERVER_PREFIX = env("MAILCHIMP_SERVER_PREFIX", default="us16")
 MAILCHIMP_REPLY_TO = env("MAILCHIMP_REPLY_TO", default="contact@ndiarama.com")
+
+# --------------------------------------------------
+# Admin CMS — django-unfold v0.98+ (oklch colors)
+# --------------------------------------------------
+UNFOLD = {
+    "SITE_TITLE": "NDIARAMA",
+    "SITE_HEADER": "NDIARAMA Media",
+    "SITE_SUBHEADER": "Gestion du contenu",
+    "SITE_URL": "/",
+    "SITE_SYMBOL": "radio",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": False,
+    "ENVIRONMENT": "config.settings.base.unfold_environment_callback",
+    # Palette terracotta NDIARAMA en format oklch (requis par unfold v0.40+)
+    "COLORS": {
+        "primary": {
+            "50":  "oklch(97.5% 0.010 52)",
+            "100": "oklch(93.8% 0.025 52)",
+            "200": "oklch(87.5% 0.050 52)",
+            "300": "oklch(79.0% 0.080 52)",
+            "400": "oklch(65.0% 0.110 52)",
+            "500": "oklch(56.0% 0.115 50)",
+            "600": "oklch(47.5% 0.110 48)",
+            "700": "oklch(39.0% 0.095 46)",
+            "800": "oklch(30.5% 0.075 44)",
+            "900": "oklch(22.0% 0.050 42)",
+            "950": "oklch(15.5% 0.030 38)",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Contenu du site",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Parametres du site",
+                        "icon": "settings",
+                        "link": "/admin/core/sitesettings/",
+                    },
+                    {
+                        "title": "Equipe",
+                        "icon": "group",
+                        "link": "/admin/core/teammember/",
+                    },
+                    {
+                        "title": "Temoignages",
+                        "icon": "format_quote",
+                        "link": "/admin/core/testimonial/",
+                    },
+                ],
+            },
+            {
+                "title": "Media",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Emissions",
+                        "icon": "radio",
+                        "link": "/admin/mediaapp/show/",
+                    },
+                    {
+                        "title": "Episodes",
+                        "icon": "play_circle",
+                        "link": "/admin/mediaapp/episode/",
+                    },
+                ],
+            },
+            {
+                "title": "Services",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Services & Formations",
+                        "icon": "school",
+                        "link": "/admin/services/service/",
+                    },
+                ],
+            },
+            {
+                "title": "Communaute",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Programmes",
+                        "icon": "emoji_events",
+                        "link": "/admin/community/programhighlight/",
+                    },
+                    {
+                        "title": "Avantages",
+                        "icon": "diversity_3",
+                        "link": "/admin/community/communityfeature/",
+                    },
+                    {
+                        "title": "Posts sociaux",
+                        "icon": "share",
+                        "link": "/admin/community/socialpost/",
+                    },
+                ],
+            },
+            {
+                "title": "Communications",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Messages recus",
+                        "icon": "mail",
+                        "link": "/admin/communication/contactmessage/",
+                    },
+                    {
+                        "title": "Abonnes newsletter",
+                        "icon": "group_add",
+                        "link": "/admin/communication/newslettersubscriber/",
+                    },
+                ],
+            },
+            {
+                "title": "Administration",
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": "Utilisateurs",
+                        "icon": "manage_accounts",
+                        "link": "/admin/accounts/user/",
+                    },
+                ],
+            },
+        ],
+    },
+    "STYLES": ["/static/admin/css/ndiarama_admin.css"],
+    "TABS": [],
+}
+
+
+def unfold_environment_callback(request):
+    from django.conf import settings as _s
+    if _s.DEBUG:
+        return {"label": "Dev", "color": "orange"}
+    return {"label": "Production", "color": "green"}

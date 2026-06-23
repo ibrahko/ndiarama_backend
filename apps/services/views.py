@@ -1,3 +1,7 @@
+"""
+Vues DRF pour l'application services.
+Fournit les endpoints consommés par le frontend NDIARAMA.
+"""
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 
