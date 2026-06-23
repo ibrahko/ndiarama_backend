@@ -4,10 +4,5 @@ nixPkgs = ["python313", "gcc", "libpq"]
 [phases.install]
 cmds = ["pip install -r requirements/prod.txt"]
 
-[phases.build]
-cmds = [
-  "python manage.py collectstatic --noinput",
-  "python manage.py migrate"
-]
-
 # Pas de [start] ici — on laisse le Procfile gérer le démarrage
+# collectstatic + migrate sont dans le Procfile pour avoir acces aux variables Railway
