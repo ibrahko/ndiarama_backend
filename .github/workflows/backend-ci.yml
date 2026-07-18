@@ -60,7 +60,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest || python manage.py test
+          pytest
 
       - name: Lint (flake8)
         run: |
@@ -72,4 +72,4 @@ jobs:
 
       - name: Dependency vulnerabilities (Safety)
         run: |
-          safety check --full-report || true
+          safety check --full-report

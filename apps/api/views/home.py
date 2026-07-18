@@ -1,5 +1,6 @@
 # apps/api/views/home.py
 
+from django.db.models import Prefetch
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,7 +37,12 @@ class HomeView(APIView):
 
         shows_qs = (
             Show.objects.filter(is_active=True)
-            .prefetch_related("episodes")
+            .prefetch_related(
+                Prefetch(
+                    "episodes",
+                    queryset=Episode.objects.filter(is_published=True),
+                )
+            )
             .order_by("order", "title")
         )
         shows_data = ShowSerializer(shows_qs, many=True).data

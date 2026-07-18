@@ -2,6 +2,11 @@ from django.db import models
 
 
 class SiteSettings(models.Model):
+    """
+    Réglages globaux du site — singleton.
+    L'admin empêche déjà l'ajout d'une 2e instance ; save() garantit
+    la même règle au niveau du modèle (API, shell, scripts).
+    """
     site_name = models.CharField(
         max_length=255,
         default="NDIARAMA Media & Consulting",
@@ -22,6 +27,23 @@ class SiteSettings(models.Model):
 
     class Meta:
         verbose_name_plural = "Site settings"
+
+    def save(self, *args, **kwargs):
+        # Force une instance unique : toute sauvegarde écrase pk=1.
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Le singleton ne se supprime pas (cohérent avec l'admin).
+        raise models.ProtectedError(
+            "SiteSettings est un singleton et ne peut pas être supprimé.", [self]
+        )
+
+    @classmethod
+    def load(cls) -> "SiteSettings":
+        """Renvoie l'instance unique, créée à la volée si nécessaire."""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
 
     def __str__(self):
         return "Site settings"

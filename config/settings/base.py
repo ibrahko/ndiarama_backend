@@ -15,7 +15,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # --------------------------------------------------
 env = environ.Env(
     DEBUG=(bool, False),
-    SECRET_KEY=(str, "change-me-in-env"),
+    # Pas de valeur par défaut pour SECRET_KEY : dev.py fournit une clé
+    # de développement, prod.py refuse de démarrer si elle est absente.
+    SECRET_KEY=(str, ""),
     ALLOWED_HOSTS=(list, []),
     DATABASE_URL=(str, "sqlite:///db.sqlite3"),
     SENTRY_DSN=(str, ""),
@@ -28,7 +30,8 @@ if env_file.exists():
 
 DEBUG = env.bool("DEBUG")
 SECRET_KEY = env("SECRET_KEY")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+# Défaut restrictif : chaque environnement doit déclarer ses hôtes.
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 # --------------------------------------------------
 # Applications
@@ -135,19 +138,47 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Django 5.1+ : STATICFILES_STORAGE / DEFAULT_FILE_STORAGE sont remplacés
+# par le dictionnaire STORAGES (les anciens réglages étaient ignorés).
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
+# --------------------------------------------------
+# Stockage média externe — Cloudinary (activé par env)
+# --------------------------------------------------
+# Sur Railway, le disque est éphémère : toute image uploadée est perdue
+# au redéploiement. Définir CLOUDINARY_URL pour stocker les médias
+# sur Cloudinary : cloudinary://<api_key>:<api_secret>@<cloud_name>
+CLOUDINARY_URL = env("CLOUDINARY_URL", default="")
+if CLOUDINARY_URL:
+    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]
+    STORAGES["default"] = {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    }
 
 # --------------------------------------------------
 # DRF / API
 # --------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Pagination : les listes renvoient {count, next, previous, results}.
+    # Le front déballe via unwrapList() (src/api/unwrap.ts).
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    # BasicAuth retiré : les identifiants transitaient à chaque requête.
+    # La session suffit (admin Django + browsable API).
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
@@ -164,6 +195,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
         "user": "1000/minute",
+        # Limites spécifiques anti-spam (formulaires publics)
+        "contact": "5/min",
+        "newsletter": "5/min",
     },
 }
 
@@ -177,7 +211,8 @@ SPECTACULAR_SETTINGS = {
 # --------------------------------------------------
 # CORS
 # --------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=True)
+# Défaut restrictif : dev.py ouvre le CORS, prod.py liste les origines.
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=False)
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 # --------------------------------------------------

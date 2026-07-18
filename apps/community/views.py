@@ -1,32 +1,29 @@
 """
 Vues DRF pour l'application community.
+
+Lecture seule : le contenu est géré exclusivement via l'admin Django.
 """
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 
-from apps.accounts.api_permissions import IsAdminOrReadOnly
 from .models import ProgramHighlight, CommunityFeature, SocialPost
-from .serializers import ProgramHighlightSerializer, CommunityFeatureSerializer, SocialPostSerializer
+from .serializers import (
+    ProgramHighlightSerializer,
+    CommunityFeatureSerializer,
+    SocialPostSerializer,
+)
 
 
-class ProgramHighlightViewSet(viewsets.ModelViewSet):
+class ProgramHighlightViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ProgramHighlight.objects.filter(is_active=True)
     serializer_class = ProgramHighlightSerializer
-
-    def get_permissions(self):
-        if self.request.method in ("GET", "HEAD", "OPTIONS"):
-            return [AllowAny()]
-        return [IsAdminOrReadOnly()]
+    permission_classes = [AllowAny]
 
 
-class CommunityFeatureViewSet(viewsets.ModelViewSet):
+class CommunityFeatureViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CommunityFeature.objects.filter(is_active=True)
     serializer_class = CommunityFeatureSerializer
-
-    def get_permissions(self):
-        if self.request.method in ("GET", "HEAD", "OPTIONS"):
-            return [AllowAny()]
-        return [IsAdminOrReadOnly()]
+    permission_classes = [AllowAny]
 
 
 class SocialPostViewSet(viewsets.ReadOnlyModelViewSet):

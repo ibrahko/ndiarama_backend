@@ -2,6 +2,11 @@ from .base import *
 
 DEBUG = True
 
+# Clé de développement uniquement — jamais utilisée en production
+# (prod.py refuse de démarrer sans SECRET_KEY d'environnement).
+if not SECRET_KEY:
+    SECRET_KEY = "django-insecure-dev-only-key-do-not-use-in-prod"
+
 ALLOWED_HOSTS = ["*"]
 
 # CORS très permissif en dev

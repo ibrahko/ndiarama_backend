@@ -1,6 +1,22 @@
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *
 
 DEBUG = False
+
+# ── Fail-fast : refuse de démarrer sans configuration sûre ──
+if not SECRET_KEY or SECRET_KEY.startswith(("change-me", "django-insecure")):
+    raise ImproperlyConfigured(
+        "SECRET_KEY manquante ou non sécurisée. "
+        "Définissez la variable d'environnement SECRET_KEY en production."
+    )
+
+if not CLOUDINARY_URL:
+    import logging
+    logging.getLogger(__name__).warning(
+        "CLOUDINARY_URL non définie : les fichiers média sont stockés sur le "
+        "disque local (éphémère sur Railway — perdus à chaque redéploiement)."
+    )
 
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",

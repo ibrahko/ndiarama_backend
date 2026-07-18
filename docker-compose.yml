@@ -19,7 +19,6 @@ services:
       - "8000:8000"
     depends_on:
       - db
-      - redis
 
   db:
     image: postgres:16
@@ -35,11 +34,8 @@ services:
     ports:
       - "5432:5432"
 
-  redis:
-    image: redis:7-alpine
-    container_name: ndiarama_redis
-    ports:
-      - "6379:6379"
+  # Redis retiré : aucun cache ni file de tâches ne l'utilise.
+  # À réintroduire si un cache DRF ou Celery est mis en place.
 
 volumes:
   db_data:

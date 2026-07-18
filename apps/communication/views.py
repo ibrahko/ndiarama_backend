@@ -10,8 +10,17 @@ from django.template.loader import render_to_string
 from rest_framework import generics, viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from apps.accounts.api_permissions import IsAdminOnly
+
+# Nom du champ honeypot : invisible pour les humains (masqué en CSS),
+# rempli par les bots. Si présent et non vide → on ignore silencieusement.
+HONEYPOT_FIELD = "website"
+
+
+def _is_bot(request) -> bool:
+    return bool(str(request.data.get(HONEYPOT_FIELD, "")).strip())
 
 from .models import NewsletterSubscriber, ContactMessage
 from .serializers import NewsletterSubscriberSerializer, ContactMessageSerializer
@@ -23,8 +32,28 @@ class NewsletterSubscribeView(generics.CreateAPIView):
     queryset = NewsletterSubscriber.objects.all()
     serializer_class = NewsletterSubscriberSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "newsletter"
 
     def create(self, request, *args, **kwargs):
+        # Honeypot : réponse "succès" factice, rien n'est enregistré.
+        if _is_bot(request):
+            logger.warning("Honeypot newsletter déclenché — requête ignorée.")
+            return Response(
+                {"success": True, "message": "Inscription réussie !"},
+                status=status.HTTP_201_CREATED,
+            )
+
+        # Doublon : vérifié AVANT la validation du serializer, sinon le
+        # validateur d'unicité renvoie un 400 générique et ce message
+        # convivial n'est jamais atteint.
+        email_raw = str(request.data.get("email", "")).lower().strip()
+        if email_raw and NewsletterSubscriber.objects.filter(email=email_raw).exists():
+            return Response(
+                {"success": False, "message": "Cet email est déjà inscrit."},
+                status=status.HTTP_200_OK
+            )
+
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
@@ -35,13 +64,6 @@ class NewsletterSubscribeView(generics.CreateAPIView):
 
         email = serializer.validated_data.get("email")
         whatsapp = serializer.validated_data.get("whatsapp", "")
-
-        # Vérifier doublon
-        if NewsletterSubscriber.objects.filter(email=email).exists():
-            return Response(
-                {"success": False, "message": "Cet email est déjà inscrit."},
-                status=status.HTTP_200_OK
-            )
 
         # Sauvegarder en base
         subscriber = serializer.save()
@@ -71,8 +93,18 @@ class ContactMessageCreateView(generics.CreateAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "contact"
 
     def create(self, request, *args, **kwargs):
+        # Honeypot : réponse "succès" factice, rien n'est enregistré.
+        if _is_bot(request):
+            logger.warning("Honeypot contact déclenché — requête ignorée.")
+            return Response(
+                {"success": True, "message": "Message envoyé avec succès."},
+                status=status.HTTP_201_CREATED,
+            )
+
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return Response(

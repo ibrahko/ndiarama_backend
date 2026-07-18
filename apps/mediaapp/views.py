@@ -1,33 +1,40 @@
 """
 Vues DRF pour l'application mediaapp.
 Fournit les endpoints consommés par le frontend NDIARAMA.
+
+Lecture seule : le contenu est géré exclusivement via l'admin Django.
+(Éviter d'exposer des écritures Basic/Session auth sur l'API publique.)
 """
+from django.db.models import Prefetch
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 
-from apps.accounts.api_permissions import IsAdminOrReadOnly
 from .models import Show, Episode
 from .serializers import ShowSerializer, EpisodeSerializer
 
 
-class ShowViewSet(viewsets.ModelViewSet):
-    queryset = Show.objects.all()
+class ShowViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Lecture publique des émissions actives, détail par slug.
+    Les épisodes imbriqués sont limités aux épisodes publiés
+    (Prefetch → une seule requête, pas de N+1).
+    """
+    queryset = Show.objects.filter(is_active=True).prefetch_related(
+        Prefetch(
+            "episodes",
+            queryset=Episode.objects.filter(is_published=True),
+        )
+    )
     serializer_class = ShowSerializer
-
-    def get_permissions(self):
-        if self.request.method in ("GET", "HEAD", "OPTIONS"):
-            return [AllowAny()]
-        return [IsAdminOrReadOnly()]
+    permission_classes = [AllowAny]
+    lookup_field = "slug"
 
 
-class EpisodeViewSet(viewsets.ModelViewSet):
+class EpisodeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Episode.objects.select_related("show").all()
     serializer_class = EpisodeSerializer
-
-    def get_permissions(self):
-        if self.request.method in ("GET", "HEAD", "OPTIONS"):
-            return [AllowAny()]
-        return [IsAdminOrReadOnly()]
+    permission_classes = [AllowAny]
+    lookup_field = "slug"
 
     def get_queryset(self):
         qs = super().get_queryset().filter(show__is_active=True, is_published=True)

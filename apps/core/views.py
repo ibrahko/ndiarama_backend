@@ -18,7 +18,8 @@ class SiteSettingsView(generics.RetrieveAPIView):
     serializer_class = SiteSettingsSerializer
 
     def get_object(self):
-        return SiteSettings.objects.first()
+        # Singleton : créée à la volée si absente (évite un 500 sur base vide)
+        return SiteSettings.load()
 
 
 class TeamMemberViewSet(viewsets.ReadOnlyModelViewSet):
